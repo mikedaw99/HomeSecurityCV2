@@ -29,13 +29,19 @@ client = None
 
 # check to see if the Dropbox should be used
 if conf["use_dropbox"]:
-	# connect to dropbox and start the session authorization process
-	flow = DropboxOAuth2FlowNoRedirect(conf["dropbox_key"], conf["dropbox_secret"])
-	print "[INFO] Authorize this application: {}".format(flow.start())
-	authCode = raw_input("Enter auth code here: ").strip()
+	if conf["accessToken"]:
+		accessToken=conf["accessToken"]
+		userID="mikedaw99@gmail.com"
+	else:
+		# connect to dropbox and start the session authorization process
+		flow = DropboxOAuth2FlowNoRedirect(conf["dropbox_key"], conf["dropbox_secret"])
+		print "[INFO] Authorize this application: {}".format(flow.start())
+		authCode = raw_input("Enter auth code here: ").strip()
 
-	# finish the authorization and grab the Dropbox client
-	(accessToken, userID) = flow.finish(authCode)
+		# finish the authorization and grab the Dropbox client
+		(accessToken, userID) = flow.finish(authCode)
+	
+	print "accessToken:{} userID:{}".format(accessToken,userID)
 	client = DropboxClient(accessToken)
 	print "[SUCCESS] dropbox account linked"
 
@@ -81,16 +87,17 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 
 	# threshold the delta image, dilate the thresholded image to fill
 	# in holes, then find contours on thresholded image
-	thresh = cv2.threshold(frameDelta, conf["delta_thresh"], 255,
-		cv2.THRESH_BINARY)[1]
+	thresh = cv2.threshold(frameDelta, conf["delta_thresh"], 255, cv2.THRESH_BINARY)[1]
 	thresh = cv2.dilate(thresh, None, iterations=2)
-	
-	#im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+
 	(_, cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 	# loop over the contours
 	for c in cnts:
 		# if the contour is too small, ignore it
+		
+		#print cv2.contourArea(c)
+		
 		if cv2.contourArea(c) < conf["min_area"]:
 			continue
 
@@ -102,13 +109,14 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 
 	# draw the text and timestamp on the frame
 	ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
-	cv2.putText(frame, "Room Status: {}".format(text), (10, 20),
-		cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+	#cv2.putText(frame, "Room Status: {}".format(text), (10, 20),
+	#	cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 	cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
 		0.35, (0, 0, 255), 1)
 
 	# check to see if the room is occupied
 	if text == "Occupied":
+		print text
 		# check to see if enough time has passed between uploads
 		if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
 			# increment the motion counter
@@ -134,7 +142,11 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 				# counter
 				lastUploaded = timestamp
 				motionCounter = 0
-
+			else:
+				print "failed min_motion_frames {}".format(motionCounter)
+		else:
+			print "failed min_upload_seconds"
+				
 	# otherwise, the room is not occupied
 	else:
 		motionCounter = 0
