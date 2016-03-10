@@ -32,7 +32,7 @@ def delete_files(api_client, logger, the_path):
                 logger.info("The file %s was deleted" % file_name)
                 #print "The file {} was deleted".format(file_name)
     except Exception as e:
-        logger.error("The error was %s" % e.msg)
+        #logger.error("The error was %s" % str(e))
         pass        
 
 def main():
@@ -140,10 +140,8 @@ def main():
 		# loop over the contours
 		for c in cnts:
 			# if the contour is too small, ignore it
-
-			#print cv2.contourArea(c)
-
 			if cv2.contourArea(c) < conf["min_area"]:
+				#logger.info("skipped small area {}".format(cv2.contourArea(c))
 				continue
 
 			# compute the bounding box for the contour, draw it on the frame,
@@ -161,12 +159,11 @@ def main():
 
 		# check to see if the room is occupied
 		if text == "Occupied":
-			print text
+			logger.info(text)
 			# check to see if enough time has passed between uploads
 			if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
 				# increment the motion counter
 				motionCounter += 1
-
 				# check to see if the number of frames with consistent motion is
 				# high enough
 				if motionCounter >= conf["min_motion_frames"]:
@@ -175,23 +172,20 @@ def main():
 						# write the image to temporary file
 						t = TempImage()
 						cv2.imwrite(t.path, frame)
-						
 						suffix=(dayNumberNow % 20)+1 #(1..20)
 						new_path="Public/SecurityDawson65_" + str(suffix)
-                				logger.info("The new path is %s" % new_path)
-
+                		#logger.info("The new path is %s" % new_path)
+                		
 						if dayNumber != dayNumberNow:
 						    #midnight. clear new folder
 						    delete_files(client, logger, new_path)
 						    dayNumber = dayNumberNow
-
+						    
 						# upload the image to Dropbox and cleanup the tempory image
-						print "[UPLOAD] {}".format
-						path = "{base_path}/{timestamp}.jpg".format(
-							base_path=new_path, timestamp=ts)
+						path = "{base_path}/{timestamp}.jpg".format(base_path=new_path, timestamp=ts)
+						logger.info("[UPLOAD] {}".format(path))
 						client.put_file(path, open(t.path, "rb"))
 						t.cleanup()
-
 					# update the last uploaded timestamp and reset the motion
 					# counter
 					lastUploaded = timestamp
@@ -200,11 +194,9 @@ def main():
 					logger.info("failed min_motion_frames {}".format(motionCounter))
 			else:
 				logger.info("failed min_upload_seconds")
-
 		# otherwise, the room is not occupied
 		else:
 			motionCounter = 0
-
 		# check to see if the frames should be displayed to screen
 		if conf["show_video"]:
 			# display the security feed
