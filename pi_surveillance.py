@@ -137,7 +137,7 @@ def main():
 		(_, cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 		# loop over the contours
-		x=0
+		x,y = 0,0
 		for c in cnts:
 			# if the contour is too small, ignore it
 			if cv2.contourArea(c) < conf["min_area"]:
@@ -152,8 +152,8 @@ def main():
 
 		# draw the text and timestamp on the frame
 		ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
-		cv2.putText(frame, "x: {}".format(x), (10, 20),
-			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+		cv2.putText(frame, "x: {} y: {}".format(x,y), (10, 20),
+			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 		cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
 			0.35, (0, 0, 255), 1)
 
