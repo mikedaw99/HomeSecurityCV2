@@ -32,8 +32,7 @@ def delete_files(api_client, logger, the_path):
                 logger.info("The file %s was deleted" % file_name)
                 #print "The file {} was deleted".format(file_name)
     except Exception as e:
-        #logger.error("The error was %s" % e.msg)
-        pass        
+        logger.exception("Failed to delete old files on %",the_path)      
 
 def main():
     # create logger'
@@ -184,14 +183,18 @@ def main():
                         if dayNumber != dayNumberNow:
                             #midnight. Clear new folder
                             delete_files(client, logger, new_path)
-                            dayNumber =dayNumberNow
+                            dayNumber = dayNumberNow
 
                         # upload the image to Dropbox and cleanup the tempory image
-                        print "[UPLOAD] {}".format
-                        path = "{base_path}/{timestamp}.jpg".format(
+                        try:
+                            path = "{base_path}/{timestamp}.jpg".format(
                             base_path=new_path, timestamp=ts)
-                        client.put_file(path, open(t.path, "rb"))
-                        t.cleanup()
+                            client.put_file(path, open(t.path, "rb"))
+                            t.cleanup()
+                            logger.info("[UPLOAD] {}".format(path))
+                        except Exception as e:
+                            logger.exception("error saving file %",path)
+                            time.sleep(30) #wait 30 seconds for network
 
                     # update the last uploaded timestamp and reset the motion
                     # counter
