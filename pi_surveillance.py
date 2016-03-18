@@ -136,12 +136,12 @@ def main():
 
         (_, cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # loop over the contours
+        # loop over the contours. 0,0 is tlc. y increases down, x increase right
         x,y = 0,0
         for c in cnts:
             (x, y, w, h) = cv2.boundingRect(c)
-            # if the contour is too small, y co-ord is too high ignore it
-            if (cv2.contourArea(c) < conf["min_area"]) or (y > 230):
+            # if the contour is too small, y co-ord is too low ignore it
+            if (cv2.contourArea(c) < conf["min_area"]) or ((y + h) < 280):
                 continue
 
             # compute the bounding box for the contour, draw it on the frame,
