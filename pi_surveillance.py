@@ -172,13 +172,7 @@ def main():
                         t = TempImage()
                         cv2.imwrite(t.path, frame)
                         suffix=(dayNumberNow % 20)+1 #(1..20)
-                        new_path="Public/SecurityDawson65_" + str(suffix)
-                        
-                        if dayNumber != dayNumberNow:
-                            #midnight. clear new folder
-                            delete_files(client, logger, new_path)
-                            dayNumber = dayNumberNow
-                            
+                        new_path="Public/SecurityDawson65_" + str(suffix)  
                         # upload the image to Dropbox and cleanup the tempory image
                         try:
                             path = "{base_path}/{timestamp}.jpg".format(base_path=new_path, timestamp=ts)
@@ -201,6 +195,11 @@ def main():
         # otherwise, no movement detected
         else:
             motionCounter = 0
+            if dayNumber != dayNumberNow:
+                #midnight. clear new folder
+                delete_files(client, logger, new_path)
+                dayNumber = dayNumberNow
+                logger.info("old files deleted for day %s".format((dayNumberNow % 20)+1))
             
         # check to see if the frames should be displayed to screen
         if conf["show_video"]:
