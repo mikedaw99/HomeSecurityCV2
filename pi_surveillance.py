@@ -8,6 +8,8 @@ from dropbox.client import DropboxClient
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import argparse
+import os
+import locale
 import warnings
 import datetime
 import imutils
@@ -31,8 +33,8 @@ def delete_files(api_client, logger, the_path):
                 api_client.file_delete(the_path + "/" + file_name)
                 logger.info("The file %s was deleted" % file_name)
                 #print "The file {} was deleted".format(file_name)
-    except Exception as e:
-        logger.exception("Failed to delete old files on %",the_path)   
+    except Exception, e:
+        logger.exception("Failed to delete old files on " + the_path)   
 
 def main():
     # create logger'
@@ -112,7 +114,7 @@ def main():
         movement = False
 
         # resize the frame, convert it to grayscale, and blur it
-        frame = imutils.resize(frame, width=500)
+        frame = imutils.resize(frame, width=600)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
@@ -141,7 +143,7 @@ def main():
         for c in cnts:
             (x, y, w, h) = cv2.boundingRect(c)
             # if the contour is too small, y co-ord is too low ignore it
-            if (cv2.contourArea(c) < conf["min_area"]) or ((y + h) < 280):
+            if (cv2.contourArea(c) < conf["min_area"]) or ((y + h) < 320):
                 continue
 
             # compute the bounding box for the contour, draw it on the frame,
@@ -154,7 +156,7 @@ def main():
         cv2.putText(frame, "x: {} y: {}".format(x,y), (10, 20),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
         cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
-            0.35, (0, 0, 255), 1)
+            0.35, (255, 255, 255), 1)
 
         # check to see if there is movement
         if movement:
