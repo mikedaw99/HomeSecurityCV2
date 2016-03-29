@@ -199,6 +199,8 @@ def main():
             motionCounter = 0
             if dayNumber != dayNumberNow:
                 #midnight. clear new folder
+                suffix=(dayNumberNow % 20)+1 #(1..20)
+                new_path="Public/SecurityDawson65_" + str(suffix)  
                 delete_files(client, logger, new_path)
                 dayNumber = dayNumberNow
                 logger.info("old files deleted for day %s".format((dayNumberNow % 20)+1))
