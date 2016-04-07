@@ -30,9 +30,9 @@ def delete_files(api_client, logger, the_path):
                 file_name=('%s' % name).encode(encoding)
                 #logger.info(file_name)    
                 #Delete this record.
-                api_client.file_delete(the_path + "/" + file_name)
-                logger.info("The file %s was deleted" % file_name)
-                #print "The file {} was deleted".format(file_name)
+                path_file = the_path + "/" + file_name
+                api_client.file_delete(path_file)
+                logger.info("The file %s was deleted" % path_file)
     except Exception, e:
         logger.exception("Failed to delete old files on " + the_path)   
 
@@ -203,7 +203,7 @@ def main():
                 new_path="Public/SecurityDawson65_" + str(suffix)  
                 delete_files(client, logger, new_path)
                 dayNumber = dayNumberNow
-                logger.info("old files deleted for day %s".format((dayNumberNow % 20)+1))
+                logger.info("old files deleted for day %s" % str(dayNumberNow % 20+1))
             
         # check to see if the frames should be displayed to screen
         if conf["show_video"]:
