@@ -3,8 +3,9 @@
 
 # import the necessary packages
 from pyimagesearch.tempimage import TempImage
-from dropbox.client import DropboxOAuth2FlowNoRedirect
-from dropbox.client import DropboxClient
+#from dropbox.client import DropboxOAuth2FlowNoRedirect
+#from dropbox.client import DropboxClient
+import dropbox
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import argparse
@@ -22,17 +23,11 @@ import logging.handlers
 def delete_files(api_client, logger, the_path):
     #the path may not exist yet
     try:
-        resp = api_client.metadata(the_path)
-        if 'contents' in resp:
-            for f in resp['contents']:
-                name = os.path.basename(f['path'])
-                encoding = locale.getdefaultlocale()[1] or 'ascii'
-                file_name=('%s' % name).encode(encoding)
-                #logger.info(file_name)    
-                #Delete this record.
-                path_file = the_path + "/" + file_name
-                api_client.file_delete(path_file)
-                logger.info("The file %s was deleted" % path_file)
+        response = api_client.files_list_folder(the_path)
+        for file in response.entries:
+            path_file = the_path + "/" + file.name
+            meta = api_client.files_delete(path_file)
+            logger.info("The file %s was deleted" % path_file)
     except Exception, e:
         logger.exception("Failed to delete old files on " + the_path)   
 
@@ -77,15 +72,20 @@ def main():
             userID="mikedaw99@gmail.com"
         else:
             # connect to dropbox and start the session authorization process
-            flow = DropboxOAuth2FlowNoRedirect(conf["dropbox_key"], conf["dropbox_secret"])
-            print "[INFO] Authorize this application: {}".format(flow.start())
-            authCode = raw_input("Enter auth code here: ").strip()
+            #flow = DropboxOAuth2FlowNoRedirect(conf["dropbox_key"], conf["dropbox_secret"])
+            #print "[INFO] Authorize this application: {}".format(flow.start())
+            #authCode = raw_input("Enter auth code here: ").strip()
 
             # finish the authorization and grab the Dropbox client
-            (accessToken, userID) = flow.finish(authCode)
+            #(accessToken, userID) = flow.finish(authCode)
+            print " ************* error *************" 
 
         print "accessToken:{} userID:{}".format(accessToken,userID)
-        client = DropboxClient(accessToken)
+        
+        # Create a dropbox object using an API v2 key
+	dbx = dropbox.Dropbox(token)
+
+        #client = DropboxClient(accessToken)
         print "[SUCCESS] dropbox account linked"
         
 
@@ -153,8 +153,15 @@ def main():
 
         # draw the text and timestamp on the frame
         ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
-        cv2.putText(frame, "x: {} y: {}".format(x,y), (10, 20),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+        cv2.putText(
+	    frame,
+	    "x: {} y: {}".format(x,y),
+	    (10, 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            2
+            )
         cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
             0.35, (255, 255, 255), 1)
 
@@ -179,11 +186,16 @@ def main():
                         try:
                             path = "{base_path}/{timestamp}.jpg".format(base_path=new_path, timestamp=ts)
                             logger.info("[UPLOAD] {}".format(path))
-                            client.put_file(path, open(t.path, "rb"))
-                            t.cleanup()
+                            #client.put_file(path, open(t.path, "rb"))
+                            
+                            # we want to overwite any previous version of the file
+                            contents=open(t.path, "rb").read()
+                            meta = dbx.files_upload(contents, path, mode=dropbox.files.WriteMode("overwrite"))
                         except Exception as e:
                             logger.exception("Network error. Upload failed")
                             time.sleep(30) #wait for dropbox to recover
+                        finally:
+                            t.cleanup()
                             
                     # update the last uploaded timestamp and reset the motion
                     # counter
@@ -201,7 +213,11 @@ def main():
                 #midnight. clear new folder
                 suffix=(dayNumberNow % 20)+1 #(1..20)
                 new_path="Public/SecurityDawson65_" + str(suffix)  
-                delete_files(client, logger, new_path)
+                delete_files(
+			                dbx,
+			                logger,
+			                new_path
+			                )
                 dayNumber = dayNumberNow
                 logger.info("old files deleted for day %s" % str(dayNumberNow % 20+1))
             
